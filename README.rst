@@ -9,6 +9,9 @@ ARM
     
 .. image:: https://travis-ci.org/pri22296/arm.svg?branch=master
     :target: https://travis-ci.org/pri22296/arm
+    
+.. image:: https://api.codacy.com/project/badge/Grade/7c5dac25e04c4e16b8ab395eece244d6
+    :target: https://www.codacy.com/app/pri22296/arm?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pri22296/arm&amp;utm_campaign=Badge_Grade
 
 .. image:: https://landscape.io/github/pri22296/arm/master/landscape.svg?style=flat
     :target: https://landscape.io/github/pri22296/arm/master

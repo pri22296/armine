@@ -3,25 +3,30 @@ from .utils import get_subsets
 from operator import itemgetter
 from beautifultable import BeautifulTable
 
+
 class ARMClassifier(ARM):
     def __init__(self):
         super().__init__()
         self._default_class = None
+        self._is_data_transactional = False
 
-    def load_from_csv(self, filename, label_index=0, is_data_transactional=False):
+    def load_from_csv(self, filename, label_index=0,
+                      is_data_transactional=False):
         self._dataset = []
         self._classes = []
         import csv
         with open(filename) as csvfile:
             mycsv = csv.reader(csvfile)
-            for i, row in enumerate(mycsv):
+            for row in mycsv:
                 label = row[label_index]
                 if label_index >= 0:
                     features = row[:label_index] + row[label_index + 1:]
                 else:
-                    features = row[:len(row) + label_index] + row[len(row) + label_index + 1:]
+                    features = (row[:len(row) + label_index]
+                                + row[len(row) + label_index + 1:])
                 if not is_data_transactional:
-                    features = ["feature{}-{}".format(i+1, feature) for i, feature in enumerate(features)]
+                    features = ["feature{}-{}".format(i+1, feature)
+                                for i, feature in enumerate(features)]
                 self._dataset.append(features)
                 self._classes.append(label)
 
@@ -33,6 +38,18 @@ class ARMClassifier(ARM):
         except KeyError:
             classwise_count = self._get_classwise_count(items)
         return self._get_itemcount_from_classwise_count(classwise_count)
+
+    def _should_join_candidate(self, candidate1, candidate2):
+        if not self._is_data_transactional:
+            # If the last entry of both candidates belong to different
+            # classes in a non transactional database
+            # then they cannot be joined as the resulting
+            # candidate would have support 0.
+            feature1 = candidate1[-1].split('-')[0]
+            feature2 = candidate2[-1].split('-')[0]
+            if (feature1 == feature2):
+                return False
+        return super()._should_join_candidate(candidate1, candidate2)
 
     def _get_classwise_count(self, items):
         count_class = dict()
@@ -49,13 +66,15 @@ class ARMClassifier(ARM):
             count_class[self._classes[i]][1] += 1
         return count_class
 
-    def _get_itemcount_from_classwise_count(self, classwise_count):
+    @staticmethod
+    def _get_itemcount_from_classwise_count(classwise_count):
         net_itemcount = 0
         for itemcount, _ in classwise_count.values():
             net_itemcount += itemcount
         return net_itemcount
 
-    def _get_rule(self, antecedent, consequent, support_threshold, confidence_threshold):
+    def _get_rule(self, antecedent, consequent, support_threshold,
+                  confidence_threshold):
         classwise_count = self._get_classwise_count(antecedent)
         item_count = self._get_itemcount_from_classwise_count(classwise_count)
 
@@ -68,8 +87,8 @@ class ARMClassifier(ARM):
                                                                   count_c,
                                                                   count)
 
-        if (confidence >= confidence_threshold) and\
-               (rule_support >= support_threshold * confidence_expected):
+        if (confidence >= confidence_threshold and
+                rule_support >= support_threshold * confidence_expected):
             rule = Rule(antecedent, consequent, confidence,
                         lift, conviction, item_support)
         else:
@@ -77,14 +96,16 @@ class ARMClassifier(ARM):
 
         return rule
 
-    def _generate_rules(self, itemset, support_threshold, confidence_threshold):
-        dataset_length = len(self._dataset)
+    def _generate_rules(self, itemset, support_threshold,
+                        confidence_threshold):
         for elements in itemset:
             subsets = get_subsets(elements)
             for items in subsets:
                 if len(items) > 0:
                     for label in set(self._classes):
-                        rule = self._get_rule(tuple(items), label, support_threshold, confidence_threshold)
+                        rule = self._get_rule(tuple(items), label,
+                                              support_threshold,
+                                              confidence_threshold)
                         if rule is not None:
                             self._rules.append(rule)
 
@@ -97,7 +118,9 @@ class ARMClassifier(ARM):
                                 'Conviction', 'Support']
         table.column_alignments[0] = table.ALIGN_LEFT
         for rule in self._rules:
-            antecedent = [item.split('-')[1] if not self._is_data_transactional else item for item in rule.antecedent]
+            antecedent = [item.split('-')[1]
+                          if not self._is_data_transactional
+                          else item for item in rule.antecedent]
             table.append_row([', '.join(antecedent),
                               rule.consequent, rule.confidence,
                               rule.lift, rule.conviction,
@@ -113,16 +136,11 @@ class ARMClassifier(ARM):
             data = self._dataset[index]
             label = self._classes[index]
         return (set(rule.antecedent).issubset(data) and
-                    ((rule.consequent == label) or (label is None)))
-
-    def learn(self, support_threshold, confidence_threshold, coverage_threshold):
-        super().learn(support_threshold, confidence_threshold, coverage_threshold)
-        self._default_class = self._get_default_class(support_threshold,
-                                                      confidence_threshold)
+                   ((rule.consequent == label) or (label is None)))
 
     def _get_default_class(self, support_threshold, confidence_threshold):
         counter = dict.fromkeys(set(self._classes), 0)
-        for i, data in enumerate(self._dataset):
+        for i, _ in enumerate(self._dataset):
             is_match = False
             for rule in self._rules:
                 if rule.support < support_threshold\
@@ -136,7 +154,16 @@ class ARMClassifier(ARM):
 
         return max(counter.items(), key=itemgetter(1))[0]
 
-    def classify(self, data, support_threshold, confidence_threshold, top_k_rules):
+    def learn(self, support_threshold, confidence_threshold,
+              coverage_threshold):
+        super().learn(support_threshold, confidence_threshold,
+                      coverage_threshold)
+        self._default_class = self._get_default_class(
+                           support_threshold,
+                           confidence_threshold)
+
+    def classify(self, data, support_threshold, confidence_threshold,
+                 top_k_rules):
         matching_rules = []
         for rule in self._rules:
             if rule.support < support_threshold\

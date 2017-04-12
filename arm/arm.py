@@ -1,5 +1,4 @@
 from itertools import chain
-from operator import itemgetter
 from collections import namedtuple
 from beautifultable import BeautifulTable
 from .utils import get_subsets
@@ -7,6 +6,11 @@ from .utils import get_subsets
 Rule = namedtuple('Rule', ('antecedent', 'consequent',
                            'confidence', 'lift',
                            'conviction', 'support'))
+
+
+def _get_rule_key(rule):
+    return (rule.lift, rule.confidence, len(rule.antecedent))
+
 
 class ARM(object):
     def __init__(self):
@@ -58,7 +62,7 @@ class ARM(object):
 
     def _get_nextgen_itemset(self, itemset):
         new_items = []
-        for i in range(len(itemset)):
+        for i, _ in enumerate(itemset):
             for j in range(i, len(itemset)):
                 if self._should_join_candidate(itemset[i], itemset[j]):
                     new_items.append(sorted(set(itemset[i] + itemset[j])))
@@ -77,16 +81,17 @@ class ARM(object):
 
     def _match_rule_with_data(self, rule, index):
         data = self._dataset[index]
-        return set(rule[0]).issubset(set(data)) and set(rule[0]).issubset(set(data))
+        return set(rule[0]).issubset(set(data))\
+            and set(rule[0]).issubset(set(data))
 
     def _prune_rules(self, coverage_threshold):
         pruned_rules = []
         data_cover_count = [0] * len(self._dataset)
         for rule in self._rules:
             rule_add = False
-            for i, data in enumerate(self._dataset):
-                if self._match_rule_with_data(rule, i)\
-                        and data_cover_count[i] >= 0:
+            for i, _ in enumerate(self._dataset):
+                if (self._match_rule_with_data(rule, i)
+                        and data_cover_count[i] >= 0):
                     rule_add = True
                     data_cover_count[i] += 1
                     if data_cover_count[i] >= coverage_threshold:
@@ -143,7 +148,8 @@ class ARM(object):
         return (item_support, rule_support, confidence,
                 confidence_expected, lift, conviction)
 
-    def _get_rule(self, antecedent, consequent, support_threshold, confidence_threshold):
+    def _get_rule(self, antecedent, consequent, support_threshold,
+                  confidence_threshold):
         count_a = self._get_itemcount(antecedent)
         count_c = self._get_itemcount(consequent)
         count = self._get_itemcount(tuple(set(antecedent).union(consequent)))
@@ -153,31 +159,31 @@ class ARM(object):
                                                                   count_c,
                                                                   count)
 
-        if (confidence >= confidence_threshold) and\
-               (item_support >= support_threshold):
+        if ((confidence >= confidence_threshold) and
+                (item_support >= support_threshold)):
             rule = Rule(antecedent, consequent, confidence,
                         lift, conviction, item_support)
         else:
             rule = None
 
         return rule
-            
-        
 
-    def _generate_rules(self, itemset, support_threshold, confidence_threshold):
+    def _generate_rules(self, itemset, support_threshold,
+                        confidence_threshold):
         self._rules = []
         for items in itemset:
             subsets = get_subsets(items)
             for element in subsets:
                 remain = set(items).difference(set(element))
                 if len(remain) > 0:
-                    rule = self._get_rule(tuple(element), tuple(remain), support_threshold, confidence_threshold)
+                    rule = self._get_rule(tuple(element), tuple(remain),
+                                          support_threshold,
+                                          confidence_threshold)
                     if rule is not None:
                         self._rules.append(rule)
-        
 
     def learn(self, support_threshold, confidence_threshold,
-              coverage_threshold, *args, **kwargs):
+              coverage_threshold):
         itemset = self._get_initial_itemset()
         final_itemset = []
         while len(itemset) > 0:
@@ -186,8 +192,7 @@ class ARM(object):
             if len(itemset) > 0:
                 final_itemset = itemset[:]
 
-        self._generate_rules(final_itemset, support_threshold, confidence_threshold)
+        self._generate_rules(final_itemset, support_threshold,
+                             confidence_threshold)
         self._prune_rules(coverage_threshold)
-        sort_key = lambda rule: (rule.lift, rule.confidence, len(rule.antecedent))
-        self._rules.sort(key=sort_key, reverse=True)
-
+        self._rules.sort(key=_get_rule_key, reverse=True)
