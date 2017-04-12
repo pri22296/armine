@@ -30,7 +30,7 @@ armine - Association Rule Mining
 Introduction
 **************************************************************************
 
-`armine` is a Association rule mining package for python 3. It provides `ARM` class
+`armine` is a Association rule mining package for python3. It provides `ARM` class
 to generate association rules from a set of transactions. It also provides a
 `ARMClassifier` class which uses CBA2 algorithm to classify given data.
 
@@ -45,7 +45,7 @@ Installation
 
 ::
 
-    pip install arm
+    pip install armine
 
 
 .. inclusion-marker-install-end

@@ -18,6 +18,15 @@ class ARM(object):
         self._rules = []
         self._itemcounts = {}
 
+    @property
+    def rules(self):
+        return self._rules
+
+    def load(self, data):
+        self._dataset = []
+        for row in data:
+            self._dataset.append(list(row))
+
     def load_from_csv(self, filename):
         self._dataset = []
         import csv
@@ -42,9 +51,6 @@ class ARM(object):
                 count += 1
         return count
 
-    def load_from_dict(self, data):
-        pass
-
     def _get_initial_itemset(self):
         itemset = []
         items = set(chain(*self._dataset))
@@ -65,7 +71,7 @@ class ARM(object):
         for i, _ in enumerate(itemset):
             for j in range(i, len(itemset)):
                 if self._should_join_candidate(itemset[i], itemset[j]):
-                    new_items.append(sorted(set(itemset[i] + itemset[j])))
+                    new_items.append(sorted(set(itemset[i]).union(itemset[j])))
         return new_items
 
     def _prune_itemset(self, itemset, support_threshold):
@@ -173,7 +179,6 @@ class ARM(object):
 
     def _generate_rules(self, itemset, support_threshold,
                         confidence_threshold):
-        self._rules = []
         for items in itemset:
             subsets = get_subsets(items)
             for element in subsets:
@@ -185,17 +190,15 @@ class ARM(object):
                     if rule is not None:
                         self._rules.append(rule)
 
-    def learn(self, support_threshold=0.1, confidence_threshold=0.1,
+    def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
         itemset = self._get_initial_itemset()
-        final_itemset = []
+        self._rules = []
         while len(itemset) > 0:
             self._prune_itemset(itemset, support_threshold)
+            self._generate_rules(itemset, support_threshold,
+                                 confidence_threshold)
             itemset = self._get_nextgen_itemset(itemset)
-            if len(itemset) > 0:
-                final_itemset = itemset[:]
 
-        self._generate_rules(final_itemset, support_threshold,
-                             confidence_threshold)
         self._prune_rules(coverage_threshold)
         self._rules.sort(key=_get_rule_key, reverse=True)

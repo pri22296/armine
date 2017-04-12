@@ -7,8 +7,21 @@ from beautifultable import BeautifulTable
 class ARMClassifier(ARM):
     def __init__(self):
         super().__init__()
+        self._classes = []
         self._default_class = None
         self._is_data_transactional = False
+
+    def load(self, data, is_data_transactional=False):
+        self._dataset = []
+        self._classes = []
+        for features, label in data.items():
+            if not is_data_transactional:
+                features = ["feature{}-{}".format(i+1, feature)
+                            for i, feature in enumerate(features)]
+            self._dataset.append(tuple(features))
+            self._classes.append(label)
+
+        self._is_data_transactional = is_data_transactional
 
     def load_from_csv(self, filename, label_index=0,
                       is_data_transactional=False):
@@ -27,7 +40,7 @@ class ARMClassifier(ARM):
                 if not is_data_transactional:
                     features = ["feature{}-{}".format(i+1, feature)
                                 for i, feature in enumerate(features)]
-                self._dataset.append(features)
+                self._dataset.append(tuple(features))
                 self._classes.append(label)
 
         self._is_data_transactional = is_data_transactional
@@ -151,7 +164,7 @@ class ARMClassifier(ARM):
 
         return max(counter.items(), key=itemgetter(1))[0]
 
-    def learn(self, support_threshold=0.1, confidence_threshold=0.1,
+    def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
         super().learn(support_threshold, confidence_threshold,
                       coverage_threshold)
@@ -159,7 +172,7 @@ class ARMClassifier(ARM):
                            support_threshold,
                            confidence_threshold)
 
-    def classify(self, data, support_threshold=0.1, confidence_threshold=0.1,
+    def classify(self, data, support_threshold, confidence_threshold,
                  top_k_rules=25):
         matching_rules = []
         for rule in self._rules:
