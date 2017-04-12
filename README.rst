@@ -4,21 +4,21 @@ armine - Association Rule Mining
 
 .. inclusion-marker-badges-start
 
-.. image:: https://badge.fury.io/py/arm.svg
-    :target: https://badge.fury.io/py/arm
+.. image:: https://badge.fury.io/py/armine.svg
+    :target: https://badge.fury.io/py/armine
     
-.. image:: https://travis-ci.org/pri22296/arm.svg?branch=master
-    :target: https://travis-ci.org/pri22296/arm
+.. image:: https://travis-ci.org/pri22296/armine.svg?branch=master
+    :target: https://travis-ci.org/pri22296/armine
     
 .. image:: https://api.codacy.com/project/badge/Grade/7c5dac25e04c4e16b8ab395eece244d6
-    :target: https://www.codacy.com/app/pri22296/arm?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pri22296/arm&amp;utm_campaign=Badge_Grade
+    :target: https://www.codacy.com/app/pri22296/armine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pri22296/arm&amp;utm_campaign=Badge_Grade
 
-.. image:: https://landscape.io/github/pri22296/arm/master/landscape.svg?style=flat
-    :target: https://landscape.io/github/pri22296/arm/master
+.. image:: https://landscape.io/github/pri22296/armine/master/landscape.svg?style=flat
+    :target: https://landscape.io/github/pri22296/armine/master
     :alt: Code Health
    
-.. image:: https://readthedocs.org/projects/arm/badge/?version=latest
-    :target: http://arm.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/armine/badge/?version=latest
+    :target: http://armine.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. inclusion-marker-badges-end

@@ -82,15 +82,12 @@ class ARMClassifier(ARM):
         count_c = classwise_count[consequent][1]
         count = classwise_count[consequent][0]
 
-        (item_support, rule_support, confidence,
-         confidence_expected, lift, conviction) = self._get_stats(count_a,
-                                                                  count_c,
-                                                                  count)
+        stats = self._get_stats(count_a, count_c, count)
 
-        if (confidence >= confidence_threshold and
-                rule_support >= support_threshold * confidence_expected):
-            rule = Rule(antecedent, consequent, confidence,
-                        lift, conviction, item_support)
+        if (stats['confidence'] >= confidence_threshold and
+                stats['rule_support'] >= support_threshold * stats['confidence_expected']):
+            rule = Rule(antecedent, consequent, stats['confidence'],
+                        stats['lift'], stats['conviction'], stats['item_support'])
         else:
             rule = None
 

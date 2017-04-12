@@ -1,4 +1,4 @@
-from arm import ARM, ARMClassifier
+from armine import ARM, ARMClassifier
 
 def test_arm():
     ar = ARM()
