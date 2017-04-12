@@ -102,7 +102,7 @@ class ARM(object):
 
         self._rules = pruned_rules
 
-    def _print_rules(self):
+    def print_rules(self):
         table = BeautifulTable()
         table.column_headers = ['Antecedent', 'Consequent',
                                 'Confidence', 'Lift',
@@ -182,8 +182,8 @@ class ARM(object):
                     if rule is not None:
                         self._rules.append(rule)
 
-    def learn(self, support_threshold, confidence_threshold,
-              coverage_threshold):
+    def learn(self, support_threshold=0.1, confidence_threshold=0.1,
+              coverage_threshold=20):
         itemset = self._get_initial_itemset()
         final_itemset = []
         while len(itemset) > 0:

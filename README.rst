@@ -1,5 +1,5 @@
 ######################################################################################
-ARM
+armine - Association Rule Mining
 ######################################################################################
 
 .. inclusion-marker-badges-start
@@ -30,9 +30,9 @@ ARM
 Introduction
 **************************************************************************
 
-This is a Association rule mining package for python 3. It provides ARM class
+`armine` is a Association rule mining package for python 3. It provides `ARM` class
 to generate association rules from a set of transactions. It also provides a
-ARMClassifier class which uses CBA2 algorithm to classify given data.
+`ARMClassifier` class which uses CBA2 algorithm to classify given data.
 
 .. inclusion-marker-introduction-end
 

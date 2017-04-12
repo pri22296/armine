@@ -1,4 +1,4 @@
-from .arm import ARM, Rule
+from .armine import ARM, Rule
 from .utils import get_subsets
 from operator import itemgetter
 from beautifultable import BeautifulTable
@@ -111,7 +111,7 @@ class ARMClassifier(ARM):
 
         self._rules = list(set(self._rules))
 
-    def _print_rules(self):
+    def print_rules(self):
         table = BeautifulTable()
         table.column_headers = ['Antecedent', 'Consequent',
                                 'Confidence', 'Lift',
@@ -154,16 +154,16 @@ class ARMClassifier(ARM):
 
         return max(counter.items(), key=itemgetter(1))[0]
 
-    def learn(self, support_threshold, confidence_threshold,
-              coverage_threshold):
+    def learn(self, support_threshold=0.1, confidence_threshold=0.1,
+              coverage_threshold=20):
         super().learn(support_threshold, confidence_threshold,
                       coverage_threshold)
         self._default_class = self._get_default_class(
                            support_threshold,
                            confidence_threshold)
 
-    def classify(self, data, support_threshold, confidence_threshold,
-                 top_k_rules):
+    def classify(self, data, support_threshold=0.1, confidence_threshold=0.1,
+                 top_k_rules=25):
         matching_rules = []
         for rule in self._rules:
             if rule.support < support_threshold\

@@ -1,7 +1,7 @@
-arm
-===
+armine
+======
 
 .. toctree::
    :maxdepth: 4
 
-   arm
+   armine

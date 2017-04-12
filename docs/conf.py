@@ -52,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'arm'
+project = 'armine'
 copyright = '2017, Priyam Singh'
 author = 'Priyam Singh'
 description = 'One line description'
