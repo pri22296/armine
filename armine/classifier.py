@@ -1,7 +1,9 @@
-from .armine import ARM, Rule
-from .utils import get_subsets
 from operator import itemgetter
 from beautifultable import BeautifulTable
+
+from .armine import ARM
+from .utils import get_subsets
+from .rule import AssociationRule
 
 
 class ARMClassifier(ARM):
@@ -19,7 +21,7 @@ class ARMClassifier(ARM):
                 features = ["feature{}-{}".format(i+1, feature)
                             for i, feature in enumerate(features)]
             self._dataset.append(tuple(features))
-            self._classes.append(label)
+            self._classes.append((label,))
 
         self._is_data_transactional = is_data_transactional
 
@@ -41,7 +43,7 @@ class ARMClassifier(ARM):
                     features = ["feature{}-{}".format(i+1, feature)
                                 for i, feature in enumerate(features)]
                 self._dataset.append(tuple(features))
-                self._classes.append(label)
+                self._classes.append((label,))
 
         self._is_data_transactional = is_data_transactional
 
@@ -67,7 +69,7 @@ class ARMClassifier(ARM):
     def _get_classwise_count(self, items):
         count_class = dict()
         for key in set(self._classes):
-            count_class[key] = [0, 0]
+            count_class[key[0]] = [0, 0]
         for i, data in enumerate(self._dataset):
             found = True
             for item in items:
@@ -75,8 +77,8 @@ class ARMClassifier(ARM):
                     found = False
                     break
             if found:
-                count_class[self._classes[i]][0] += 1
-            count_class[self._classes[i]][1] += 1
+                count_class[self._classes[i][0]][0] += 1
+            count_class[self._classes[i][0]][1] += 1
         return count_class
 
     @staticmethod
@@ -86,26 +88,6 @@ class ARMClassifier(ARM):
             net_itemcount += itemcount
         return net_itemcount
 
-    def _get_rule(self, antecedent, consequent, support_threshold,
-                  confidence_threshold):
-        classwise_count = self._get_classwise_count(antecedent)
-        item_count = self._get_itemcount_from_classwise_count(classwise_count)
-
-        count_a = item_count
-        count_c = classwise_count[consequent][1]
-        count = classwise_count[consequent][0]
-
-        stats = self._get_stats(count_a, count_c, count)
-
-        if (stats['confidence'] >= confidence_threshold and
-                stats['rule_support'] >= support_threshold * stats['confidence_expected']):
-            rule = Rule(antecedent, consequent, stats['confidence'],
-                        stats['lift'], stats['conviction'], stats['item_support'])
-        else:
-            rule = None
-
-        return rule
-
     def _generate_rules(self, itemset, support_threshold,
                         confidence_threshold):
         for elements in itemset:
@@ -113,13 +95,17 @@ class ARMClassifier(ARM):
             for items in subsets:
                 if len(items) > 0:
                     for label in set(self._classes):
-                        rule = self._get_rule(tuple(items), label,
-                                              support_threshold,
-                                              confidence_threshold)
-                        if rule is not None:
+                        classwise_count = self._get_classwise_count(tuple(items))
+                        count_a = self._get_itemcount_from_classwise_count(classwise_count)
+                        count_c = classwise_count[label[0]][1]
+                        count_b = classwise_count[label[0]][0]
+                        rule = AssociationRule(tuple(items), label,
+                                           count_b, count_a, count_c,
+                                           len(self._dataset))
+                        cba2_sup_th = support_threshold * (count_c / len(self._dataset))
+                        if (rule.confidence >= confidence_threshold and
+                                rule.support >= cba2_sup_th):
                             self._rules.append(rule)
-
-        self._rules = list(set(self._rules))
 
     def print_rules(self):
         table = BeautifulTable()
@@ -132,21 +118,11 @@ class ARMClassifier(ARM):
                           if not self._is_data_transactional
                           else item for item in rule.antecedent]
             table.append_row([', '.join(antecedent),
-                              rule.consequent, rule.confidence,
-                              rule.lift, rule.conviction,
-                              rule.support])
+                              rule.consequent[0], round(rule.confidence, 3),
+                              round(rule.lift, 3), round(rule.conviction, 3),
+                              round(rule.support, 3)])
 
         print(table)
-
-    def _match_rule_with_data(self, rule, index):
-        if not isinstance(index, int):
-            data = index
-            label = None
-        else:
-            data = self._dataset[index]
-            label = self._classes[index]
-        return (set(rule.antecedent).issubset(data) and
-                   ((rule.consequent == label) or (label is None)))
 
     def _get_default_class(self, support_threshold, confidence_threshold):
         counter = dict.fromkeys(set(self._classes), 0)
@@ -156,7 +132,8 @@ class ARMClassifier(ARM):
                 if rule.support < support_threshold\
                        or rule.confidence < confidence_threshold:
                     continue
-                if self._match_rule_with_data(rule, i):
+                if (rule.match_antecedent(self._dataset[i]) and
+                        rule.match_consequent(self._classes[i])):
                     is_match = True
                     break
             if is_match is False:
@@ -179,14 +156,15 @@ class ARMClassifier(ARM):
             if rule.support < support_threshold\
                    or rule.confidence < confidence_threshold:
                 continue
-            if self._match_rule_with_data(rule, data):
+            if rule.match_antecedent(data):
                 matching_rules.append(rule)
             if len(matching_rules) == top_k_rules:
                 break
         if len(matching_rules) > 0:
             score = dict()
             for rule in matching_rules:
-                score[rule.consequent] = (score.get(rule.consequent, 0)
+                label = rule.consequent[0]
+                score[label] = (score.get(label, 0)
                                           + rule.lift)
             return max(score.items(), key=itemgetter(1))[0]
         else:

@@ -1,11 +1,9 @@
 from itertools import chain
 from collections import namedtuple
 from beautifultable import BeautifulTable
-from .utils import get_subsets
 
-Rule = namedtuple('Rule', ('antecedent', 'consequent',
-                           'confidence', 'lift',
-                           'conviction', 'support'))
+from .utils import get_subsets
+from .rule import AssociationRule
 
 
 def _get_rule_key(rule):
@@ -95,8 +93,8 @@ class ARM(object):
         data_cover_count = [0] * len(self._dataset)
         for rule in self._rules:
             rule_add = False
-            for i, _ in enumerate(self._dataset):
-                if (self._match_rule_with_data(rule, i)
+            for i, data in enumerate(self._dataset):
+                if (rule.match_antecedent(data)
                         and data_cover_count[i] >= 0):
                     rule_add = True
                     data_cover_count[i] += 1
@@ -116,66 +114,15 @@ class ARM(object):
         table.column_alignments[0] = table.ALIGN_LEFT
         for rule in self._rules:
             table.append_row([', '.join(rule.antecedent),
-                              ', '.join(rule.consequent), rule.confidence,
-                              rule.lift, rule.conviction,
-                              rule.support])
+                              ', '.join(rule.consequent), round(rule.confidence, 3),
+                              round(rule.lift, 3), round(rule.conviction, 3),
+                              round(rule.support, 3)])
 
         print(table)
 
     def _print_items(self):
         for item, count in self._itemcounts.items():
             print(item, count)
-
-    def _get_stats(self, count_a, count_c, count):
-        dataset_size = len(self._dataset)
-        item_support = round(count_a/dataset_size, 3)
-        rule_support = round(count/dataset_size, 3)
-        confidence_expected = count_c/dataset_size
-        confidence = 0
-        lift = 1
-        conviction = 1
-
-        try:
-            confidence = round(count/count_a, 3)
-        except ZeroDivisionError:
-            pass
-
-        try:
-            lift = round(confidence/confidence_expected, 3)
-        except ZeroDivisionError:
-            pass
-
-        try:
-            conviction = round((1 - (confidence / lift))
-                               / (1 - confidence), 3)
-        except ZeroDivisionError:
-            pass
-
-        return {'item_support': item_support,
-                'rule_support': rule_support,
-                'confidence': confidence,
-                'confidence_expected': confidence_expected,
-                'lift': lift,
-                'conviction': conviction,
-                }
-
-    def _get_rule(self, antecedent, consequent, support_threshold,
-                  confidence_threshold):
-        count_a = self._get_itemcount(antecedent)
-        count_c = self._get_itemcount(consequent)
-        count = self._get_itemcount(tuple(set(antecedent).union(consequent)))
-
-        stats = self._get_stats(count_a, count_c, count)
-
-        if ((stats['confidence'] >= confidence_threshold) and
-                (stats['item_support'] >= support_threshold)):
-            rule = Rule(antecedent, consequent, stats['confidence'],
-                        stats['lift'], stats['conviction'],
-                        stats['item_support'])
-        else:
-            rule = None
-
-        return rule
 
     def _generate_rules(self, itemset, support_threshold,
                         confidence_threshold):
@@ -184,10 +131,14 @@ class ARM(object):
             for element in subsets:
                 remain = set(items).difference(set(element))
                 if len(remain) > 0:
-                    rule = self._get_rule(tuple(element), tuple(remain),
-                                          support_threshold,
-                                          confidence_threshold)
-                    if rule is not None:
+                    count_a = self._get_itemcount(element)
+                    count_c = self._get_itemcount(remain)
+                    count_b = self._get_itemcount(items)
+                    rule = AssociationRule(tuple(element), tuple(remain),
+                                           count_b, count_a, count_c,
+                                           len(self._dataset))
+                    if (rule.confidence >= confidence_threshold and
+                            rule.support >= support_threshold):
                         self._rules.append(rule)
 
     def learn(self, support_threshold, confidence_threshold,
@@ -200,5 +151,6 @@ class ARM(object):
                                  confidence_threshold)
             itemset = self._get_nextgen_itemset(itemset)
 
+        self._rules = list(set(self._rules))
         self._prune_rules(coverage_threshold)
         self._rules.sort(key=_get_rule_key, reverse=True)
