@@ -2,7 +2,6 @@ from operator import itemgetter
 from beautifultable import BeautifulTable
 
 from .armine import ARM
-from .utils import get_subsets
 from .rule import AssociationRule
 
 
@@ -90,22 +89,20 @@ class ARMClassifier(ARM):
 
     def _generate_rules(self, itemset, support_threshold,
                         confidence_threshold):
-        for elements in itemset:
-            subsets = get_subsets(elements)
-            for items in subsets:
-                if len(items) > 0:
-                    for label in set(self._classes):
-                        classwise_count = self._get_classwise_count(tuple(items))
-                        count_a = self._get_itemcount_from_classwise_count(classwise_count)
-                        count_c = classwise_count[label[0]][1]
-                        count_b = classwise_count[label[0]][0]
-                        rule = AssociationRule(tuple(items), label,
-                                           count_b, count_a, count_c,
-                                           len(self._dataset))
-                        cba2_sup_th = support_threshold * (count_c / len(self._dataset))
-                        if (rule.confidence >= confidence_threshold and
-                                rule.support >= cba2_sup_th):
-                            self._rules.append(rule)
+        for items in itemset:
+            if len(items) > 0:
+                for label in set(self._classes):
+                    classwise_count = self._get_classwise_count(tuple(items))
+                    count_a = self._get_itemcount_from_classwise_count(classwise_count)
+                    count_c = classwise_count[label[0]][1]
+                    count_b = classwise_count[label[0]][0]
+                    rule = AssociationRule(tuple(items), label,
+                                       count_b, count_a, count_c,
+                                       len(self._dataset))
+                    cba2_sup_th = support_threshold * (count_c / len(self._dataset))
+                    if (rule.confidence >= confidence_threshold and
+                            rule.support >= cba2_sup_th):
+                        self._rules.append(rule)
 
     def print_rules(self):
         table = BeautifulTable()
@@ -113,14 +110,17 @@ class ARMClassifier(ARM):
                                 'Confidence', 'Lift',
                                 'Conviction', 'Support']
         table.column_alignments[0] = table.ALIGN_LEFT
+        table.column_alignments[1] = table.ALIGN_LEFT
         for rule in self._rules:
             antecedent = [item.split('-')[1]
                           if not self._is_data_transactional
                           else item for item in rule.antecedent]
             table.append_row([', '.join(antecedent),
-                              rule.consequent[0], round(rule.confidence, 3),
-                              round(rule.lift, 3), round(rule.conviction, 3),
-                              round(rule.support, 3)])
+                              ', '.join(rule.consequent),
+                              rule.confidence,
+                              rule.lift,
+                              rule.conviction,
+                              rule.support])
 
         print(table)
 

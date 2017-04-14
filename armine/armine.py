@@ -1,5 +1,4 @@
 from itertools import chain
-from collections import namedtuple
 from beautifultable import BeautifulTable
 
 from .utils import get_subsets
@@ -112,11 +111,15 @@ class ARM(object):
                                 'Confidence', 'Lift',
                                 'Conviction', 'Support']
         table.column_alignments[0] = table.ALIGN_LEFT
+        table.column_alignments[1] = table.ALIGN_LEFT
+        table.numeric_precision = 3
         for rule in self._rules:
             table.append_row([', '.join(rule.antecedent),
-                              ', '.join(rule.consequent), round(rule.confidence, 3),
-                              round(rule.lift, 3), round(rule.conviction, 3),
-                              round(rule.support, 3)])
+                              ', '.join(rule.consequent),
+                              rule.confidence,
+                              rule.lift,
+                              rule.conviction,
+                              rule.support])
 
         print(table)
 

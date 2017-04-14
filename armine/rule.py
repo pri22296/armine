@@ -94,7 +94,7 @@ class AssociationRule(object):
 
     @property
     def added_value(self):
-        return self._datasize * self.confidence / count_c
+        return self._datasize * self.confidence / self._count_c
 
     # ******************** Properties end here **********************************
 
