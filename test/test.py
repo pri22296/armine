@@ -15,12 +15,14 @@ data1 = [['apple', 'beer', 'rice', 'chicken'],
          ['milk', 'beer'],
          ['milk', 'mango']]
 
+
 def test_arm():
     ar = ARM()
     ar.load(data1)
     ar.learn(0.1, 0.1)
     for rule in ar.rules:
         print(rule, rule.confidence, rule.support, rule.lift)
+
 
 def test_arm_classifier():
     ar = ARMClassifier()
@@ -35,11 +37,12 @@ def test_arm_classifier():
             'BD2', 'Beh', 'SINF']
     result = ar.classify(data, 0.3, 0.1)
     print(result)
-    
+
 
 def main():
     test_arm()
     test_arm_classifier()
+
 
 if __name__ == '__main__':
     main()

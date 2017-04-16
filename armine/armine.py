@@ -146,6 +146,24 @@ class ARM(object):
 
     def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
+        """Generate rules from the Training dataset.
+
+        Parameters
+        ----------
+        support_threshold : float
+            User defined threshold between 0 and 1. Rules with support
+            less than `support_threshold` are not generated.
+
+        confidence_threshold : float
+            User defined threshold between 0 and 1. Rules with confidence
+            less than `confidence_threshold` are not generated.
+
+        coverage_threshold : int
+            Maximum number of rules, a specific row from dataset can match.
+            After it exceeds this, That row is no longer considered for
+            other rules. Using this process all rules are removed, which do
+            not match any row available for matching at that time.
+        """
         itemset = self._get_initial_itemset()
         self._rules = []
         while len(itemset) > 0:

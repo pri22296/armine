@@ -129,7 +129,6 @@ class ARMClassifier(ARM):
                               rule.lift,
                               rule.conviction,
                               rule.support])
-
         print(table)
 
     def _get_default_class(self, support_threshold, confidence_threshold):
@@ -146,7 +145,6 @@ class ARMClassifier(ARM):
                     break
             if is_match is False:
                 counter[self._classes[i]] += 1
-
         return max(counter.items(), key=itemgetter(1))[0]
 
     def learn(self, support_threshold, confidence_threshold,
@@ -163,7 +161,6 @@ class ARMClassifier(ARM):
         if not self._transactional_database:
             data_instance = ["feature{}-{}".format(i+1, feature)
                              for i, feature in enumerate(data)]
-            
         matching_rules = []
         for rule in self._rules:
             if (rule.coverage < support_threshold or
