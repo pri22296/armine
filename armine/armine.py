@@ -5,32 +5,37 @@ from .utils import get_subsets
 from .rule import AssociationRule
 
 
-def _get_rule_key(rule):
-    return (rule.lift, rule.confidence, len(rule.antecedent))
-
-
 class ARM(object):
     def __init__(self):
         self._dataset = []
         self._rules = []
         self._itemcounts = {}
+        self.set_rule_key(lambda rule: (rule.lift, rule.confidence, len(rule.antecedent)))
 
     @property
     def rules(self):
         return self._rules
 
     def load(self, data):
-        self._dataset = []
+        self._clear()
         for row in data:
             self._dataset.append(list(row))
 
     def load_from_csv(self, filename):
-        self._dataset = []
+        self._clear()
         import csv
         with open(filename) as csvfile:
             mycsv = csv.reader(csvfile)
             for row in mycsv:
                 self._dataset.append(row)
+
+    def set_rule_key(self, key):
+        self._rule_key = key
+
+    def _clear(self):
+        self._dataset = []
+        self._rules = []
+        self._itemcounts = {}
 
     def _get_itemcount(self, items):
         try:
@@ -81,11 +86,6 @@ class ARM(object):
 
         for items in to_be_pruned:
             itemset.remove(items)
-
-    def _match_rule_with_data(self, rule, index):
-        data = self._dataset[index]
-        return set(rule[0]).issubset(set(data))\
-            and set(rule[0]).issubset(set(data))
 
     def _prune_rules(self, coverage_threshold):
         pruned_rules = []
@@ -156,4 +156,4 @@ class ARM(object):
 
         self._rules = list(set(self._rules))
         self._prune_rules(coverage_threshold)
-        self._rules.sort(key=_get_rule_key, reverse=True)
+        self._rules.sort(key=self._rule_key, reverse=True)

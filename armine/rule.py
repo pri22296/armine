@@ -22,8 +22,8 @@ class AssociationRule(object):
         self._count_b = count_both
         self._count_c = count_consequent
         self._datasize = datasize
-        self._antecedent = tuple(antecedent)
-        self._consequent = tuple(consequent)
+        self._antecedent = antecedent
+        self._consequent = consequent
 
     def __eq__(self, other):
         return (self._antecedent == other._antecedent
@@ -40,6 +40,11 @@ class AssociationRule(object):
                 + hash(self._count_b)
                 + hash(self._count_c)
                 + hash(self._datasize))
+
+    def __str__(self):
+        lhs = ', '.join(self._antecedent)
+        rhs = ', '.join(self._consequent)
+        return "{} ==> {}".format(lhs, rhs)
 
     # ********************* Properties begin here *******************************
 
@@ -103,4 +108,23 @@ class AssociationRule(object):
 
     def match_consequent(self, items):
         return set(self._consequent).issubset(items)
+
+
+class ClassificationRule(AssociationRule):
+    def __init__(self, antecedent, consequent, count_both,
+                 count_antecedent, count_consequent, datasize,
+                 transactional_database=False):
+        super().__init__(antecedent, consequent, count_both,
+                 count_antecedent, count_consequent, datasize)
+        self._transactional_database = False
+
+    def __str__(self):
+        lhs = self._antecedent
+        if not self._transactional_database:
+            lhs = ', '.join(feature.split('-')[1] for feature in self._antecedent)
+        rhs = self._consequent
+        return "{} ==> {}".format(lhs, rhs)
+
+    def match_consequent(self, label):
+        return self._consequent == label
 

@@ -2,7 +2,7 @@ from operator import itemgetter
 from beautifultable import BeautifulTable
 
 from .armine import ARM
-from .rule import AssociationRule
+from .rule import ClassificationRule
 
 
 class ARMClassifier(ARM):
@@ -12,22 +12,20 @@ class ARMClassifier(ARM):
         self._default_class = None
         self._is_data_transactional = False
 
-    def load(self, data, is_data_transactional=False):
-        self._dataset = []
-        self._classes = []
+    def load(self, data, transactional_database=False):
+        self._clear()
         for features, label in data.items():
-            if not is_data_transactional:
+            if not transactional_database:
                 features = ["feature{}-{}".format(i+1, feature)
                             for i, feature in enumerate(features)]
             self._dataset.append(tuple(features))
-            self._classes.append((label,))
+            self._classes.append(label)
 
-        self._is_data_transactional = is_data_transactional
+        self._transactional_database = transactional_database
 
     def load_from_csv(self, filename, label_index=0,
-                      is_data_transactional=False):
-        self._dataset = []
-        self._classes = []
+                      transactional_database=False):
+        self._clear()
         import csv
         with open(filename) as csvfile:
             mycsv = csv.reader(csvfile)
@@ -38,13 +36,17 @@ class ARMClassifier(ARM):
                 else:
                     features = (row[:len(row) + label_index]
                                 + row[len(row) + label_index + 1:])
-                if not is_data_transactional:
+                if not transactional_database:
                     features = ["feature{}-{}".format(i+1, feature)
                                 for i, feature in enumerate(features)]
                 self._dataset.append(tuple(features))
-                self._classes.append((label,))
+                self._classes.append(label)
 
-        self._is_data_transactional = is_data_transactional
+        self._transactional_database = transactional_database
+
+    def _clear(self):
+        super()._clear()
+        self._classes = []
 
     def _get_itemcount(self, items):
         try:
@@ -54,7 +56,7 @@ class ARMClassifier(ARM):
         return self._get_itemcount_from_classwise_count(classwise_count)
 
     def _should_join_candidate(self, candidate1, candidate2):
-        if not self._is_data_transactional:
+        if not self._transactional_database:
             # If the last entry of both candidates belong to different
             # classes in a non transactional database
             # then they cannot be joined as the resulting
@@ -68,7 +70,7 @@ class ARMClassifier(ARM):
     def _get_classwise_count(self, items):
         count_class = dict()
         for key in set(self._classes):
-            count_class[key[0]] = [0, 0]
+            count_class[key] = [0, 0]
         for i, data in enumerate(self._dataset):
             found = True
             for item in items:
@@ -76,8 +78,8 @@ class ARMClassifier(ARM):
                     found = False
                     break
             if found:
-                count_class[self._classes[i][0]][0] += 1
-            count_class[self._classes[i][0]][1] += 1
+                count_class[self._classes[i]][0] += 1
+            count_class[self._classes[i]][1] += 1
         return count_class
 
     @staticmethod
@@ -91,18 +93,24 @@ class ARMClassifier(ARM):
                         confidence_threshold):
         for items in itemset:
             if len(items) > 0:
+                rules = []
                 for label in set(self._classes):
                     classwise_count = self._get_classwise_count(tuple(items))
                     count_a = self._get_itemcount_from_classwise_count(classwise_count)
-                    count_c = classwise_count[label[0]][1]
-                    count_b = classwise_count[label[0]][0]
-                    rule = AssociationRule(tuple(items), label,
+                    count_c = classwise_count[label][1]
+                    count_b = classwise_count[label][0]
+                    rule = ClassificationRule(tuple(items), label,
                                        count_b, count_a, count_c,
-                                       len(self._dataset))
-                    cba2_sup_th = support_threshold * (count_c / len(self._dataset))
+                                       len(self._dataset), self._transactional_database)
                     if (rule.confidence >= confidence_threshold and
-                            rule.support >= cba2_sup_th):
-                        self._rules.append(rule)
+                            rule.coverage >= support_threshold):
+                        rules.append(rule)
+                        #self._rules.append(rule)
+                rules.sort(key=self._rule_key)
+                try:
+                    self._rules.append(rules[-1])
+                except IndexError:
+                    pass
 
     def print_rules(self):
         table = BeautifulTable()
@@ -113,7 +121,7 @@ class ARMClassifier(ARM):
         table.column_alignments[1] = table.ALIGN_LEFT
         for rule in self._rules:
             antecedent = [item.split('-')[1]
-                          if not self._is_data_transactional
+                          if not self._transactional_database
                           else item for item in rule.antecedent]
             table.append_row([', '.join(antecedent),
                               ', '.join(rule.consequent),
@@ -129,7 +137,7 @@ class ARMClassifier(ARM):
         for i, _ in enumerate(self._dataset):
             is_match = False
             for rule in self._rules:
-                if rule.support < support_threshold\
+                if rule.coverage < support_threshold\
                        or rule.confidence < confidence_threshold:
                     continue
                 if (rule.match_antecedent(self._dataset[i]) and
@@ -151,21 +159,25 @@ class ARMClassifier(ARM):
 
     def classify(self, data, support_threshold, confidence_threshold,
                  top_k_rules=25):
+        data_instance = data[:]
+        if not self._transactional_database:
+            data_instance = ["feature{}-{}".format(i+1, feature)
+                             for i, feature in enumerate(data)]
+            
         matching_rules = []
         for rule in self._rules:
-            if rule.support < support_threshold\
-                   or rule.confidence < confidence_threshold:
+            if (rule.coverage < support_threshold or
+                  rule.confidence < confidence_threshold):
                 continue
-            if rule.match_antecedent(data):
+            if rule.match_antecedent(data_instance):
                 matching_rules.append(rule)
             if len(matching_rules) == top_k_rules:
                 break
         if len(matching_rules) > 0:
             score = dict()
             for rule in matching_rules:
-                label = rule.consequent[0]
-                score[label] = (score.get(label, 0)
-                                          + rule.lift)
+                label = rule.consequent
+                score[label] = (score.get(label, 0) + rule.lift)
             return max(score.items(), key=itemgetter(1))[0]
         else:
             return self._default_class
