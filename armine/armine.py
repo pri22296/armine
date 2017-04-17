@@ -17,11 +17,25 @@ class ARM(object):
         return self._rules
 
     def load(self, data):
+        """Load a set of transactions from a Iterable of lists.
+
+        Parameters
+        ----------
+        data : Iterable of lists
+            List of transactions
+        """
         self._clear()
         for row in data:
             self._dataset.append(list(row))
 
     def load_from_csv(self, filename):
+        """Load a set of transactions from a csv file.
+
+        Parameters
+        ----------
+        filename : string
+            Name of the csv file which contains a set of transactions
+        """
         self._clear()
         import csv
         with open(filename) as csvfile:
@@ -30,6 +44,17 @@ class ARM(object):
                 self._dataset.append(row)
 
     def set_rule_key(self, key):
+        """Set the key function which should be used to sort rules.
+
+        The default key function sorts rules using lift, confidence and
+        size of antecedent respectively. This behaviour can be changed
+        using this method.
+
+        Parameters
+        ----------
+        key : function
+            The key function to sort rules
+        """
         self._rule_key = key
 
     def _clear(self):
@@ -159,10 +184,10 @@ class ARM(object):
             less than `confidence_threshold` are not generated.
 
         coverage_threshold : int
-            Maximum number of rules, a specific row from dataset can match.
+            Maximum number of rules, a specific transaction can match.
             After it exceeds this, That row is no longer considered for
-            other rules. Using this process all rules are removed, which do
-            not match any row available for matching at that time.
+            matching other rules. Using this process all rules are removed,
+            which do not match any transaction left(Default 20).
         """
         itemset = self._get_initial_itemset()
         self._rules = []
