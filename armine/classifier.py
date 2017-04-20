@@ -1,11 +1,17 @@
 from operator import itemgetter
-from beautifultable import BeautifulTable
 
 from .armine import ARM
 from .rule import ClassificationRule
 
 
 class ARMClassifier(ARM):
+    """Utility class for Classification Rule Mining.
+
+    This class provides methods to generate a set of Classification rules
+    from a transactional dataset or a tabular dataset. You can then use this
+    class to classify unclassified data instances. The classification is done
+    using a modified version of the CBA Algorithm.
+    """
     def __init__(self):
         super().__init__()
         self._classes = []
@@ -143,25 +149,6 @@ class ARMClassifier(ARM):
                 except IndexError:
                     pass
 
-    def print_rules(self):
-        table = BeautifulTable()
-        table.column_headers = ['Antecedent', 'Consequent',
-                                'Confidence', 'Lift',
-                                'Conviction', 'Support']
-        table.column_alignments[0] = table.ALIGN_LEFT
-        table.column_alignments[1] = table.ALIGN_LEFT
-        for rule in self._rules:
-            antecedent = [item.split('-')[1]
-                          if not self._transactional_database
-                          else item for item in rule.antecedent]
-            table.append_row([', '.join(antecedent),
-                              ', '.join(rule.consequent),
-                              rule.confidence,
-                              rule.lift,
-                              rule.conviction,
-                              rule.support])
-        print(table)
-
     def _get_default_class(self, support_threshold, confidence_threshold):
         counter = dict.fromkeys(set(self._classes), 0)
         for i, _ in enumerate(self._dataset):
@@ -180,6 +167,24 @@ class ARMClassifier(ARM):
 
     def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
+        """Generate Classification rules from the Training dataset.
+
+        Parameters
+        ----------
+        support_threshold : float
+            User defined threshold between 0 and 1. Rules with support
+            less than `support_threshold` are not generated.
+
+        confidence_threshold : float
+            User defined threshold between 0 and 1. Rules with confidence
+            less than `confidence_threshold` are not generated.
+
+        coverage_threshold : int
+            Maximum number of rules, a specific transaction can match.
+            After it exceeds this, That row is no longer considered for
+            matching other rules. Using this process all rules are removed,
+            which do not match any transaction left(Default 20).
+        """
         super().learn(support_threshold, confidence_threshold,
                       coverage_threshold)
         self._default_class = self._get_default_class(

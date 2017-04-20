@@ -1,11 +1,15 @@
 from itertools import chain
-from beautifultable import BeautifulTable
 
 from .utils import get_subsets
 from .rule import AssociationRule
 
 
 class ARM(object):
+    """Utility class for Association Rule Mining.
+
+    This class provides methods to generate a set of Association rules
+    from a transactional dataset.
+    """
     def __init__(self):
         self._dataset = []
         self._rules = []
@@ -14,6 +18,7 @@ class ARM(object):
 
     @property
     def rules(self):
+        """Get a list of rules generated using the loaded dataset."""
         return self._rules
 
     def load(self, data):
@@ -130,24 +135,6 @@ class ARM(object):
 
         self._rules = pruned_rules
 
-    def print_rules(self):
-        table = BeautifulTable()
-        table.column_headers = ['Antecedent', 'Consequent',
-                                'Confidence', 'Lift',
-                                'Conviction', 'Support']
-        table.column_alignments[0] = table.ALIGN_LEFT
-        table.column_alignments[1] = table.ALIGN_LEFT
-        table.numeric_precision = 3
-        for rule in self._rules:
-            table.append_row([', '.join(rule.antecedent),
-                              ', '.join(rule.consequent),
-                              rule.confidence,
-                              rule.lift,
-                              rule.conviction,
-                              rule.support])
-
-        print(table)
-
     def _print_items(self):
         for item, count in self._itemcounts.items():
             print(item, count)
@@ -171,7 +158,7 @@ class ARM(object):
 
     def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
-        """Generate rules from the Training dataset.
+        """Generate Association rules from the Training dataset.
 
         Parameters
         ----------

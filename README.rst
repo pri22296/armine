@@ -57,11 +57,11 @@ Installation
 Links
 **************************************************************************
 
-* `Documentation <http://arm.readthedocs.io/en/latest/>`_
+* `Documentation <http://armine.readthedocs.io/en/latest/>`_
 
-* `Source <https://github.com/pri22296/arm>`_
+* `Source <https://github.com/pri22296/armine>`_
 
-* `API Reference <http://arm.readthedocs.io/en/latest/source/arm.html#module-arm>`_
+* `API Reference <http://armine.readthedocs.io/en/latest/source/armine.html#module-armine>`_
 
 
 .. inclusion-marker-links-end
