@@ -106,25 +106,26 @@ class AssociationRule(object):
     def match_antecedent(self, items):
         return set(self._antecedent).issubset(items)
 
+    def antecedent2str(self):
+        return ', '.join(self._antecedent)
+
     def match_consequent(self, items):
         return set(self._consequent).issubset(items)
 
+    def consequent2str(self):
+        return ', '.join(self._consequent)
+
 
 class ClassificationRule(AssociationRule):
-    def __init__(self, antecedent, consequent, count_both,
-                 count_antecedent, count_consequent, datasize,
-                 transactional_database=False):
-        super().__init__(antecedent, consequent, count_both,
-                 count_antecedent, count_consequent, datasize)
-        self._transactional_database = False
 
     def __str__(self):
-        lhs = self._antecedent
-        if not self._transactional_database:
-            lhs = ', '.join(feature.split('-')[1] for feature in self._antecedent)
+        lhs = ', '.join(self._antecedent)
         rhs = self._consequent
         return "{} ==> {}".format(lhs, rhs)
 
     def match_consequent(self, label):
         return self._consequent == label
+
+    def consequent2str(self):
+        return self._consequent
 

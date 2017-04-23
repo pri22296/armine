@@ -1,4 +1,5 @@
 from itertools import chain
+from beautifultable import BeautifulTable
 
 from .utils import get_subsets
 from .rule import AssociationRule
@@ -67,6 +68,9 @@ class ARM(object):
         self._rules = []
         self._itemcounts = {}
 
+    def _clean_items(self, items):
+        return tuple(items)
+
     def _get_itemcount(self, items):
         try:
             return self._itemcounts[tuple(set(items))]
@@ -123,7 +127,8 @@ class ARM(object):
         for rule in self._rules:
             rule_add = False
             for i, data in enumerate(self._dataset):
-                if (rule.match_antecedent(data)
+                items = self._clean_items(data)
+                if (rule.match_antecedent(items)
                         and data_cover_count[i] >= 0):
                     rule_add = True
                     data_cover_count[i] += 1
@@ -155,6 +160,29 @@ class ARM(object):
                     if (rule.confidence >= confidence_threshold and
                             rule.support >= support_threshold):
                         self._rules.append(rule)
+
+    def print_rules(self, attributes=('support', 'confidence', 'lift')):
+        """Print the generated rules in a tabular format.
+
+        Parameters
+        ----------
+        attributes : array_like
+            pass
+        """
+        table = BeautifulTable()
+        table.column_headers = (['Antecedent', 'Consequent']
+                                + list(attr.replace('_', ' ').title()
+                                       for attr in attributes))
+
+        table.column_alignments[0] = table.ALIGN_LEFT
+        table.column_alignments[1] = table.ALIGN_LEFT
+        for rule in self.rules:
+            table.append_row([rule.antecedent2str(),
+                              rule.consequent2str()]
+                             + list(getattr(rule, attr)
+                                    for attr in attributes))
+
+        print(table)
 
     def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):

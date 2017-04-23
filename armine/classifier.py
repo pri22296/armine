@@ -16,7 +16,7 @@ class ARMClassifier(ARM):
         super().__init__()
         self._classes = []
         self._default_class = None
-        self._is_data_transactional = False
+        self._transactional_database = False
 
     def load(self, data, transactional_database=False):
         """Load dataset from a Dictionary.
@@ -85,6 +85,12 @@ class ARMClassifier(ARM):
         super()._clear()
         self._classes = []
 
+    def _clean_items(self, items):
+        if not self._transactional_database:
+            return tuple([feature.split('-')[1] for feature in items])
+        else:
+            return tuple(items)
+
     def _get_itemcount(self, items):
         try:
             classwise_count = self._itemcounts[tuple(set(items))]
@@ -136,13 +142,13 @@ class ARMClassifier(ARM):
                     count_a = self._get_itemcount_from_classwise_count(classwise_count)
                     count_c = classwise_count[label][1]
                     count_b = classwise_count[label][0]
-                    rule = ClassificationRule(tuple(items), label,
+                    antecedent = self._clean_items(items)
+                    rule = ClassificationRule(antecedent, label,
                                        count_b, count_a, count_c,
-                                       len(self._dataset), self._transactional_database)
+                                       len(self._dataset))
                     if (rule.confidence >= confidence_threshold and
                             rule.coverage >= support_threshold):
                         rules.append(rule)
-                        #self._rules.append(rule)
                 rules.sort(key=self._rule_key)
                 try:
                     self._rules.append(rules[-1])
@@ -157,7 +163,8 @@ class ARMClassifier(ARM):
                 if rule.coverage < support_threshold\
                        or rule.confidence < confidence_threshold:
                     continue
-                if (rule.match_antecedent(self._dataset[i]) and
+                items = self._clean_items(self._dataset[i])
+                if (rule.match_antecedent(items) and
                         rule.match_consequent(self._classes[i])):
                     is_match = True
                     break
@@ -226,16 +233,12 @@ class ARMClassifier(ARM):
         at a low support and confidence_threshold, which reduces optimization
         time.
         """
-        instance = data_instance[:]
-        if not self._transactional_database:
-            instance = ["feature{}-{}".format(i+1, feature)
-                             for i, feature in enumerate(data_instance)]
         matching_rules = []
         for rule in self._rules:
             if (rule.coverage < support_threshold or
                   rule.confidence < confidence_threshold):
                 continue
-            if rule.match_antecedent(instance):
+            if rule.match_antecedent(data_instance):
                 matching_rules.append(rule)
             if len(matching_rules) == top_k_rules:
                 break
