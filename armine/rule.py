@@ -46,8 +46,7 @@ class AssociationRule(object):
         rhs = ', '.join(self._consequent)
         return "{} ==> {}".format(lhs, rhs)
 
-    # ********************* Properties begin here *******************************
-
+    # ********************* Properties begin here *************************** #
     @property
     def antecedent(self):
         return self._antecedent
@@ -101,7 +100,7 @@ class AssociationRule(object):
     def added_value(self):
         return self._datasize * self.confidence / self._count_c
 
-    # ******************** Properties end here **********************************
+    # ******************** Properties end here ****************************** #
 
     def match_antecedent(self, items):
         return set(self._antecedent).issubset(items)
@@ -128,4 +127,3 @@ class ClassificationRule(AssociationRule):
 
     def consequent2str(self):
         return self._consequent
-

@@ -15,7 +15,8 @@ class ARM(object):
         self._dataset = []
         self._rules = []
         self._itemcounts = {}
-        self.set_rule_key(lambda rule: (rule.lift, rule.confidence, len(rule.antecedent)))
+        self.set_rule_key(lambda rule: (rule.lift, rule.confidence,
+                                        len(rule.antecedent)))
 
     @property
     def rules(self):

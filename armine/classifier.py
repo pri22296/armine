@@ -32,9 +32,9 @@ class ARMClassifier(ARM):
         Note
         ----
         A database is transactional, if it contains transactions accompanied
-        with respective labels. On the other hand, A non transactional database
-        is basically a tabular dataset, with each column representing a distinct
-        feature.
+        with respective labels. On the other hand, A non transactional
+        database is basically a tabular dataset, with each column representing
+        a distinct feature.
         """
         self._clear()
         for features, label in data.items():
@@ -56,8 +56,9 @@ class ARMClassifier(ARM):
             Name of the csv file which contains the dataset.
 
         label_index : int
-            Index of the column which contains the labels for each row. Supports
-            negative indexing(Default -1 which corresponds to the last column).
+            Index of the column which contains the labels for each row.
+            Supports negative indexing(Default -1 which corresponds to the
+            last column).
 
         transactional_database : bool
             Whether the database is transactional(Default False).
@@ -139,13 +140,14 @@ class ARMClassifier(ARM):
                 rules = []
                 for label in set(self._classes):
                     classwise_count = self._get_classwise_count(tuple(items))
-                    count_a = self._get_itemcount_from_classwise_count(classwise_count)
+                    count_a = self._get_itemcount_from_classwise_count(
+                                  classwise_count)
                     count_c = classwise_count[label][1]
                     count_b = classwise_count[label][0]
                     antecedent = self._clean_items(items)
                     rule = ClassificationRule(antecedent, label,
-                                       count_b, count_a, count_c,
-                                       len(self._dataset))
+                                              count_b, count_a, count_c,
+                                              len(self._dataset))
                     if (rule.confidence >= confidence_threshold and
                             rule.coverage >= support_threshold):
                         rules.append(rule)
@@ -236,7 +238,7 @@ class ARMClassifier(ARM):
         matching_rules = []
         for rule in self._rules:
             if (rule.coverage < support_threshold or
-                  rule.confidence < confidence_threshold):
+                    rule.confidence < confidence_threshold):
                 continue
             if rule.match_antecedent(data_instance):
                 matching_rules.append(rule)
