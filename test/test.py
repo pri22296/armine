@@ -28,12 +28,16 @@ def test_arm_classifier():
     ar.load_from_csv('raw.csv', -1, False)
     ar.learn(0.3, 0.1)
     ar.print_rules()
+    ar.learn(0.6, 0.1)
+    ar.print_rules()
+    ar.learn(0.8, 0.1)
+    ar.print_rules()
     data = ['April', 'Div6' ,'Dep4',
             'Normal', 'MH', 'GW', 'MW',
             'UC', 'Employee', 'SPI1',
             'IPS3', 'EDS5', 'SS12',
             'BD2', 'Beh', 'SINF']
-    result = ar.classify(data, 0.3, 0.1)
+    result = ar.classify(data)
     print(result)
 
 

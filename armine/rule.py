@@ -17,10 +17,10 @@ def on_zero_error(default_value):
 
 class AssociationRule(object):
     def __init__(self, antecedent, consequent, count_both,
-                 count_antecedent, count_consequent, datasize):
-        self._count_a = count_antecedent
-        self._count_b = count_both
-        self._count_c = count_consequent
+                 count_lhs, count_rhs, datasize):
+        self._count_lhs = count_lhs
+        self._count_both = count_both
+        self._count_rhs = count_rhs
         self._datasize = datasize
         self._antecedent = antecedent
         self._consequent = consequent
@@ -28,17 +28,17 @@ class AssociationRule(object):
     def __eq__(self, other):
         return (self._antecedent == other._antecedent
                 and self._consequent == other._consequent
-                and self._count_a == other._count_a
-                and self._count_b == other._count_b
-                and self._count_c == other._count_c
+                and self._count_lhs == other._count_lhs
+                and self._count_both == other._count_both
+                and self._count_rhs == other._count_rhs
                 and self._datasize == other._datasize)
 
     def __hash__(self):
         return (hash(self._antecedent)
                 + hash(self._consequent)
-                + hash(self._count_a)
-                + hash(self._count_b)
-                + hash(self._count_c)
+                + hash(self._count_lhs)
+                + hash(self._count_both)
+                + hash(self._count_rhs)
                 + hash(self._datasize))
 
     def __str__(self):
@@ -57,48 +57,48 @@ class AssociationRule(object):
 
     @property
     def support(self):
-        return self._count_b / self._datasize
+        return self._count_both / self._datasize
 
     @property
     def coverage(self):
-        return self._count_a / self._datasize
+        return self._count_lhs / self._datasize
 
     @property
     def strength(self):
-        return self._count_c / self._count_a
+        return self._count_rhs / self._count_lhs
 
     @property
     @on_zero_error(0)
     def confidence(self):
-        return self._count_b / self._count_a
+        return self._count_both / self._count_lhs
 
     @property
     def confidence_expected(self):
-        return self._count_c / self._datasize
+        return self._count_rhs / self._datasize
 
     @property
     @on_zero_error(1)
     def lift(self):
-        return ((self._datasize * self._count_b)
-                / (self._count_a * self._count_c))
+        return ((self._datasize * self._count_both)
+                / (self._count_lhs * self._count_rhs))
 
     @property
     def leverage(self):
-        return ((self._datasize * self._count_b)
-                - (self._count_a * self._count_c))
+        return ((self._datasize * self._count_both)
+                - (self._count_lhs * self._count_rhs))
 
     @property
     @on_zero_error(1)
     def conviction(self):
-        return (1 - (self._count_c / self._datasize)) / (1 - self.confidence)
+        return (1 - (self._count_rhs / self._datasize)) / (1 - self.confidence)
 
     @property
     def cosine(self):
-        return self._count_b / sqrt(self._count_a * self._count_c)
+        return self._count_both / sqrt(self._count_lhs * self._count_rhs)
 
     @property
     def added_value(self):
-        return self._datasize * self.confidence / self._count_c
+        return self._datasize * self.confidence / self._count_rhs
 
     # ******************** Properties end here ****************************** #
 

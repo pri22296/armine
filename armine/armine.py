@@ -3,6 +3,7 @@ from beautifultable import BeautifulTable
 
 from .utils import get_subsets
 from .rule import AssociationRule
+import math
 
 
 class ARM(object):
@@ -17,11 +18,33 @@ class ARM(object):
         self._itemcounts = {}
         self.set_rule_key(lambda rule: (rule.lift, rule.confidence,
                                         len(rule.antecedent)))
+        self._apparent_support_threshold = None
+        self._apparent_confidence_threshold = None
+        self._apparent_coverage_threshold = None
+        self._real_support_threshold = math.inf
+        self._real_confidence_threshold = math.inf
+        self._real_coverage_threshold = math.inf
 
     @property
     def rules(self):
         """Get a list of rules generated using the loaded dataset."""
-        return self._rules
+        import itertools
+        return list(itertools.filterfalse(
+            lambda rule: (self._apparent_support_threshold > rule.coverage
+                          or self._apparent_confidence_threshold > rule.confidence),
+            self._rules))
+
+    @property
+    def support_threshold(self):
+        return self._apparent_support_threshold
+
+    @property
+    def confidence_threshold(self):
+        return self._apparent_confidence_threshold
+
+    @property
+    def coverage_threshold(self):
+        return self._apparent_coverage_threhold
 
     def load(self, data):
         """Load a set of transactions from a Iterable of lists.
@@ -111,18 +134,18 @@ class ARM(object):
                     new_items.append(sorted(set(itemset[i]).union(itemset[j])))
         return new_items
 
-    def _prune_itemset(self, itemset, support_threshold):
+    def _prune_itemset(self, itemset):
         to_be_pruned = []
         for items in itemset:
             item_count = self._get_itemcount(items)
             item_support = round(item_count / len(self._dataset), 3)
-            if item_support < support_threshold:
+            if item_support < self._real_support_threshold:
                 to_be_pruned.append(items)
 
         for items in to_be_pruned:
             itemset.remove(items)
 
-    def _prune_rules(self, coverage_threshold):
+    def _prune_rules(self):
         pruned_rules = []
         data_cover_count = [0] * len(self._dataset)
         for rule in self._rules:
@@ -133,7 +156,7 @@ class ARM(object):
                         and data_cover_count[i] >= 0):
                     rule_add = True
                     data_cover_count[i] += 1
-                    if data_cover_count[i] >= coverage_threshold:
+                    if data_cover_count[i] >= self._real_coverage_threshold:
                         data_cover_count[i] = -1
 
             if rule_add:
@@ -145,24 +168,22 @@ class ARM(object):
         for item, count in self._itemcounts.items():
             print(item, count)
 
-    def _generate_rules(self, itemset, support_threshold,
-                        confidence_threshold):
+    def _generate_rules(self, itemset):
         for items in itemset:
             subsets = get_subsets(items)
             for element in subsets:
                 remain = set(items).difference(set(element))
                 if len(remain) > 0:
-                    count_a = self._get_itemcount(element)
-                    count_c = self._get_itemcount(remain)
-                    count_b = self._get_itemcount(items)
+                    count_lhs = self._get_itemcount(element)
+                    count_rhs = self._get_itemcount(remain)
+                    count_both = self._get_itemcount(items)
                     rule = AssociationRule(tuple(element), tuple(remain),
-                                           count_b, count_a, count_c,
+                                           count_both, count_lhs, count_rhs,
                                            len(self._dataset))
-                    if (rule.confidence >= confidence_threshold and
-                            rule.support >= support_threshold):
+                    if (rule.confidence >= self._real_confidence_threshold):
                         self._rules.append(rule)
 
-    def print_rules(self, attributes=('support', 'confidence', 'lift')):
+    def print_rules(self, attributes=('coverage', 'confidence', 'lift')):
         """Print the generated rules in a tabular format.
 
         Parameters
@@ -185,6 +206,27 @@ class ARM(object):
 
         print(table)
 
+    def _learn(self, support_threshold, confidence_threshold,
+               coverage_threshold):
+        self._apparent_support_threshold = support_threshold
+        self._apparent_confidence_threshold = confidence_threshold
+        self._apparent_coverage_threshold = coverage_threshold
+        
+        self._real_support_threshold = support_threshold
+        self._real_confidence_threshold = confidence_threshold
+        self._real_coverage_threshold = coverage_threshold
+        
+        itemset = self._get_initial_itemset()
+        self._rules = []
+        while len(itemset) > 0:
+            self._prune_itemset(itemset)
+            self._generate_rules(itemset)
+            itemset = self._get_nextgen_itemset(itemset)
+
+        self._rules = list(set(self._rules))
+        self._prune_rules()
+        self._rules.sort(key=self._rule_key, reverse=True)
+
     def learn(self, support_threshold, confidence_threshold,
               coverage_threshold=20):
         """Generate Association rules from the Training dataset.
@@ -205,14 +247,12 @@ class ARM(object):
             matching other rules. Using this process all rules are removed,
             which do not match any transaction left(Default 20).
         """
-        itemset = self._get_initial_itemset()
-        self._rules = []
-        while len(itemset) > 0:
-            self._prune_itemset(itemset, support_threshold)
-            self._generate_rules(itemset, support_threshold,
-                                 confidence_threshold)
-            itemset = self._get_nextgen_itemset(itemset)
+        if (support_threshold < self._real_support_threshold
+                or confidence_threshold < self._real_confidence_threshold
+                or coverage_threshold != self._real_coverage_threshold):
+            self._learn(support_threshold, confidence_threshold,
+                        coverage_threshold)
 
-        self._rules = list(set(self._rules))
-        self._prune_rules(coverage_threshold)
-        self._rules.sort(key=self._rule_key, reverse=True)
+        self._apparent_support_threshold = support_threshold
+        self._apparent_confidence_threshold = confidence_threshold
+        self._apparent_coverage_threshold = coverage_threshold
