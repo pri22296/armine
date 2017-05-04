@@ -68,7 +68,7 @@ class ARM(object):
         """
         self._clear()
         import csv
-        with open(filename) as csvfile:
+        with open(filename, newline='') as csvfile:
             mycsv = csv.reader(csvfile)
             for row in mycsv:
                 self._dataset.append(row)

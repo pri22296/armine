@@ -12,6 +12,6 @@ install:
     - python setup.py --quiet install
     
 script:
-    - python test/test.py
+    - python test.py
 
 

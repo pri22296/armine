@@ -65,7 +65,7 @@ class ARMClassifier(ARM):
         """
         self._clear()
         import csv
-        with open(filename) as csvfile:
+        with open(filename, newline='') as csvfile:
             mycsv = csv.reader(csvfile)
             for row in mycsv:
                 label = row[label_index]
