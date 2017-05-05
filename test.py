@@ -1,16 +1,18 @@
 from armine import ARM, ARMClassifier
 import unittest
 
-ARM_TEST_FILENAME = 'testdata//arm_sample.csv'
+ARM_TEST_FILENAME = 'sample//arm_sample.csv'
 ARM_TEST_DATA = [['Bread', 'Milk'],
                  ['Bread', 'Diapers', 'Beer', 'Eggs'],
                  ['Milk', 'Diapers', 'Beer', 'Cola'],
                  ['Bread', 'Milk', 'Diapers', 'Beer'],
                  ['Bread', 'Milk', 'Diapers', 'Cola']]
 
-ARM_CLASSIFIER_TEST_FILENAME = 'testdata//classifier_sample.csv'
-ARM_CLASSIFIER_TEST_DATA = []
-ARM_CLASSIFIER_TEST_LABELS = []
+ARM_CLASSIFIER_TEST_FILENAME = 'sample//classifier_sample.csv'
+ARM_CLASSIFIER_TEST_DATA = {('Egg','Chicken'): 'NV',
+                            ('Milk','Egg','Spinach'): 'M',
+                            ('Chicken','Milk'): 'M',
+                            ('Milk','Spinach'): 'V',}
 
 class ARMTestCase(unittest.TestCase):
     def setUp(self):
@@ -129,6 +131,64 @@ class ARMClassifierTestCase(unittest.TestCase):
     def setUp(self):
         self.arm = ARMClassifier()
 
+    def compare_iterable(self, iterable1, iterable2):
+        for item1, item2 in zip(iterable1, iterable2):
+            self.assertEqual(item1, item2)
+
+    def compare_classwise_counts(self, count1, count2):
+        self.assertEqual(len(count1), len(count2))
+        for label in count1:
+            self.compare_iterable(count1[label], count2[label])
+
+    def compare_data(self, data):
+        items = sorted(list(data.items()))
+        items1 = sorted(list(zip(self.arm._dataset, self.arm._classes)))
+        for item, item1 in zip(items, items1):
+            self.compare_iterable(item[0], item1[0])
+            self.assertEqual(item[1], item1[1])
+
+    def test_load_data(self):
+        self.arm.load(ARM_CLASSIFIER_TEST_DATA, True)
+        self.compare_data(ARM_CLASSIFIER_TEST_DATA)
+
+    def test_load_data_from_csv(self):
+        self.arm.load_from_csv(ARM_CLASSIFIER_TEST_FILENAME, -1, True)
+        self.compare_data(ARM_CLASSIFIER_TEST_DATA)
+
+    def test_classwise_count(self):
+        self.arm.load(ARM_CLASSIFIER_TEST_DATA, True)
+        count = self.arm._get_classwise_count(['Milk'])
+        self.compare_classwise_counts(count, {'V': [1, 1],
+                                              'NV': [0, 1],
+                                              'M': [2, 2]})
+
+        count = self.arm._get_classwise_count(['Milk', 'Spinach'])
+        self.compare_classwise_counts(count, {'V': [1, 1],
+                                              'NV': [0, 1],
+                                              'M': [1, 2]})
+
+    def test_itemcount(self):
+        self.arm.load(ARM_CLASSIFIER_TEST_DATA, True)
+        count = self.arm._get_itemcount(['Milk'])
+        self.assertEqual(count, 3)
+
+        count = self.arm._get_itemcount(['Milk', 'Spinach'])
+        self.assertEqual(count, 2)
+
+        count = self.arm._get_itemcount(['Milk', 'Spinach', 'Chicken'])
+        self.assertEqual(count, 0)
+
+    def learn(self, support_threshold, confidence_threshold,
+              coverage_threshold):
+        self.arm.load(ARM_CLASSIFIER_TEST_DATA, True)
+        self.arm.learn(support_threshold, confidence_threshold,
+                       coverage_threshold)
+
+    def test_learn(self):
+        self.learn(0.2, 0.1, 20)
+        self.assertTrue(self.arm._default_class in self.arm._classes)
+        for rule in self.arm._rules:
+            self.assertTrue(rule.consequent in self.arm._classes)
 
 def test_arm():
     ar = ARM()
