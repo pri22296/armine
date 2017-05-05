@@ -1,3 +1,4 @@
+from io import open
 from operator import itemgetter
 
 from .armine import ARM
@@ -13,7 +14,7 @@ class ARMClassifier(ARM):
     using a modified version of the CBA Algorithm.
     """
     def __init__(self):
-        super().__init__()
+        super(ARMClassifier, self).__init__()
         self._classes = []
         self._default_class = None
         self._transactional_database = False
@@ -83,7 +84,7 @@ class ARMClassifier(ARM):
         self._transactional_database = transactional_database
 
     def _clear(self):
-        super()._clear()
+        super(ARMClassifier, self)._clear()
         self._classes = []
 
     def _clean_items(self, items):
@@ -109,7 +110,7 @@ class ARMClassifier(ARM):
             feature2 = candidate2[-1].split('-')[0]
             if (feature1 == feature2):
                 return False
-        return super()._should_join_candidate(candidate1, candidate2)
+        return super(ARMClassifier, self)._should_join_candidate(candidate1, candidate2)
 
     def _get_classwise_count(self, items):
         count_class = dict()
@@ -173,8 +174,9 @@ class ARMClassifier(ARM):
 
     def _learn(self, support_threshold, confidence_threshold,
               coverage_threshold):
-        super()._learn(support_threshold, confidence_threshold,
-              coverage_threshold)
+        super(ARMClassifier, self)._learn(support_threshold,
+                                          confidence_threshold,
+                                          coverage_threshold)
         self._update_default_class()
 
     def classify(self, data_instance, top_k_rules=25):

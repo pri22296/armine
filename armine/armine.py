@@ -1,4 +1,11 @@
+from io import open
 from itertools import chain
+try:
+    # Python 2
+    from itertools import ifilterfalse as filterfalse
+except ImportError:
+    # Pyhton 3
+    from itertools import filterfalse
 from beautifultable import BeautifulTable
 
 from .utils import get_subsets
@@ -27,8 +34,7 @@ class ARM(object):
     @property
     def rules(self):
         """Get a list of rules generated using the loaded dataset."""
-        import itertools
-        return list(itertools.filterfalse(
+        return list(filterfalse(
             lambda rule: (self._apparent_support_threshold > rule.coverage
                           or self._apparent_confidence_threshold > rule.confidence),
             self._rules))
