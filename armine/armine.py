@@ -3,7 +3,6 @@ from beautifultable import BeautifulTable
 
 from .utils import get_subsets
 from .rule import AssociationRule
-import math
 
 
 class ARM(object):
@@ -21,9 +20,9 @@ class ARM(object):
         self._apparent_support_threshold = None
         self._apparent_confidence_threshold = None
         self._apparent_coverage_threshold = None
-        self._real_support_threshold = math.inf
-        self._real_confidence_threshold = math.inf
-        self._real_coverage_threshold = math.inf
+        self._real_support_threshold = float('inf')
+        self._real_confidence_threshold = float('inf')
+        self._real_coverage_threshold = float('inf')
 
     @property
     def rules(self):
