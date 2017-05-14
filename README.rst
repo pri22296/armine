@@ -6,6 +6,9 @@ armine - Association Rule Mining
 
 .. image:: https://badge.fury.io/py/armine.svg
     :target: https://badge.fury.io/py/armine
+
+.. image:: https://coveralls.io/repos/github/pri22296/armine/badge.svg?branch=master
+    :target: https://coveralls.io/github/pri22296/armine?branch=master
     
 .. image:: https://travis-ci.org/pri22296/armine.svg?branch=master
     :target: https://travis-ci.org/pri22296/armine
