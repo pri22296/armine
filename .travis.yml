@@ -17,8 +17,17 @@ install:
 
 script:
     - coverage run test.py
-    
+
 after_success:
     - coveralls
 
-
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: pri22296
+  password:
+    secure: kG7Raxo3E3/zY4iQh483of2LB0zaEmOFn4jfhpCkqebn+KgiMp1GhcxpU4kiQk6Yy1iiELF+shRXGma0mkKvRP+44c9BOWbJ+X6VSUbuTE2Hy/of2YqzsRYZOipP8EoNRKWetAMMbuS9uW7oV50Hd/3WexZYSOoLBcAFU7B7Hw+t1ebOSpdUjkRURBgHOJ+ymCRgO73yb7+p8POFxvVwvd7Gf36Z0dE0ogqHpB0O8+rI0SSTTJmfinQ8DPg6TlClFekc3vhi6xtfV1KXUp06s62pkM+AS3C3QyPsTsBhp8BaL2OYR/HE+6TSlkPdCN9OlD9GXspdCUTJNC5gTYB+Bp2ZyhnnuucfkUGP+AfYm0FR2VBkUmga+ZCkUJPYjHx4akRBZU7pW4WKmxFCgSh8KmwTDGaTLDpkSA97+FQlEjk2CPPM7dC1CQt0VZ3U21kl+6DMlfqseV0CLYBaUd6ytaTsc4LQzH3NyHUqTKydtdOs8rB0zSTSUxfivwcmNfrr8LrP6WsKxvOfiZYM9a1wOkx6jI8N54pAvtYtQIaZpY+2ogkAR7XqkxUBVMwVjSY9cBZu4cuHeyAIUISv4ntwBC4sNOZyfN0d16mGIKEzEmGJ8I9TirJ6j9zXN/KcniSYPVXVqovKASx6V2kWf1MXNE2bBK/NqiHWrpZiuw3vV+M=
+  on:
+    tags: true
+    repo: pri22296/armine
+    python: '3.6'
